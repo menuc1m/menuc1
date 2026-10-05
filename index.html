@@ -2,141 +2,184 @@
 <html lang="fa" dir="rtl">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>منو</title>
-<meta name="robots" content="noindex,nofollow">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>در حال اتصال به منو...</title>
+
+<!-- پیش‌بارگذاری برای افزایش سرعت پینگ و برقراری اتصال سریع‌تر -->
+<link rel="dns-prefetch" href="https://menu4.servervnp23.workers.dev">
+<link rel="dns-prefetch" href="https://menuc1.ir">
+<link rel="preconnect" href="https://menu4.servervnp23.workers.dev" crossorigin>
+<link rel="preconnect" href="https://menuc1.ir" crossorigin>
+
 <style>
-  *{box-sizing:border-box}
-  body{margin:0;min-height:100vh;min-height:100dvh;display:grid;place-items:center;background:#1a0f0a;color:#fff;font-family:Tahoma,sans-serif;text-align:center;padding:20px}
-  a{color:#ffd9b4;font-size:16px;text-decoration:none;display:inline-block;padding:12px 20px;border:1px solid rgba(255,217,180,.3);border-radius:10px;margin:4px 0;transition:background .2s}
-  a:hover{background:rgba(254,123,1,.15)}
-  .sp{width:34px;height:34px;margin:0 auto 14px;border:4px solid rgba(255,255,255,.2);border-top-color:#fe7b01;border-radius:50%;animation:r 1s linear infinite}
-  @keyframes r{to{transform:rotate(360deg)}}
-  p{margin:6px 0}
-  .hint{font-size:12px;color:#8a7a6a;margin-top:16px}
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    min-height: 100vh;
+    min-height: 100dvh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background: #1a0f0a;
+    color: #fff;
+    font-family: Tahoma, Vazirmatn, sans-serif;
+    text-align: center;
+    padding: 20px;
+  }
+  .container {
+    width: 100%;
+    max-width: 380px;
+  }
+  .sp {
+    width: 40px;
+    height: 40px;
+    margin: 0 auto 16px;
+    border: 4px solid rgba(255, 255, 255, .15);
+    border-top-color: #fe7b01;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  
+  #m {
+    font-size: 15px;
+    line-height: 1.6;
+    margin-bottom: 20px;
+    color: #e0e0e0;
+  }
+  
+  .links-box {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  
+  .btn-link {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: #2a1a12;
+    border: 1px solid #fe7b01;
+    color: #ffd9b4;
+    padding: 14px 18px;
+    border-radius: 10px;
+    text-decoration: none;
+    font-size: 15px;
+    font-weight: bold;
+    transition: all 0.2s ease;
+  }
+  
+  .btn-link:hover, .btn-link:active {
+    background: #fe7b01;
+    color: #fff;
+  }
+
+  .badge {
+    font-size: 12px;
+    padding: 4px 8px;
+    border-radius: 6px;
+    background: rgba(254, 123, 1, 0.2);
+    color: #fe7b01;
+  }
+  
+  .btn-link:hover .badge {
+    background: rgba(255, 255, 255, 0.3);
+    color: #fff;
+  }
 </style>
 </head>
 <body>
-<div>
+
+<div class="container">
   <div class="sp" id="sp"></div>
-  <p id="m">در حال اتصال به منو...</p>
-  <div id="l"></div>
-  <p class="hint" id="h"></p>
+  <p id="m">در حال شناسایی سریع‌ترین مسیر منو...</p>
+  <div id="l" class="links-box"></div>
 </div>
+
 <script>
-(function () {
-  "use strict";
-
-  var SITES = [
-    "https://menuc1.ir",
-    "https://menu4.servervnp23.workers.dev"
-  ];
-  var TIMEOUT = 8000;
-  var CACHE_KEY = "menu_best_site";
-  var CACHE_TTL = 5 * 60 * 1000; // 5 دقیقه
-
-  var done = false;
-  var pending = 0;
-  var controllers = [];
-
-  var suffix = (location.search || "") + (location.hash || "");
-
-  var spEl = document.getElementById("sp");
-  var mEl  = document.getElementById("m");
-  var lEl  = document.getElementById("l");
-  var hEl  = document.getElementById("h");
-
-  function buildUrl(base) {
-    var u = base.replace(/\/+$/, "") + "/";
-    if (suffix) u += suffix;
-    return u;
+// مشخصات سایت‌ها و اپراتورهای مربوطه
+var SITES = [
+  {
+    name: "همراه اول",
+    url: "https://menu4.servervnp23.workers.dev"
+  },
+  {
+    name: "ایرانسل",
+    url: "https://menuc1.ir/#menu"
   }
+];
 
-  function cleanup() {
-    controllers.forEach(function (c) {
-      try { c.abort(); } catch (e) {}
-    });
-    controllers = [];
+// کاهش زمان انتظار به 3.5 ثانیه برای افزایش سرعت بازخورد
+var TIMEOUT = 3500; 
+
+var done = false;
+var left = SITES.length;
+
+// تابع ترکیب آدرس با search و hash صفحه اصلی
+function getFinalUrl(siteUrl) {
+  var search = location.search;
+  var hash = location.hash;
+
+  if (siteUrl.indexOf('#') !== -1) {
+    var parts = siteUrl.split('#');
+    var main = parts[0];
+    var defaultHash = '#' + parts[1];
+    return main + search + (hash || defaultHash);
   }
+  return siteUrl + search + hash;
+}
 
-  function go(u) {
-    if (done) return;
-    done = true;
-    cleanup();
-    try {
-      sessionStorage.setItem(CACHE_KEY, JSON.stringify({
-        url: u,
-        t: Date.now()
-      }));
-    } catch (e) {}
-    location.replace(buildUrl(u));
-  }
+function go(site) {
+  if (done) return;
+  done = true;
+  location.replace(getFinalUrl(site.url));
+}
 
-  function showFallback() {
-    spEl.style.display = "none";
-    mEl.textContent = "اتصال خودکار برقرار نشد؛ یکی از لینک‌ها را امتحان کن:";
+function fail() {
+  left--;
+  if (left > 0 || done) return;
+  
+  // نمایش دکمه‌ها در صورت عدم اتصال خودکار
+  document.getElementById("sp").style.display = "none";
+  document.getElementById("m").textContent = "اتصال خودکار برقرار نشد. لطفاً لینک مربوط به اپراتور خود را انتخاب کنید:";
+  
+  var box = document.getElementById("l");
+  SITES.forEach(function (site) {
+    var a = document.createElement("a");
+    a.className = "btn-link";
+    a.href = getFinalUrl(site.url);
+    
+    var spanText = document.createElement("span");
+    spanText.textContent = "ورود مخصوص " + site.name;
+    
+    var spanBadge = document.createElement("span");
+    spanBadge.className = "badge";
+    spanBadge.textContent = site.name;
 
-    SITES.forEach(function (u) {
-      var p = document.createElement("p");
-      var a = document.createElement("a");
-      a.href = buildUrl(u);
-      a.rel = "noopener noreferrer";
-      a.textContent = u.replace(/^https?:\/\//, "");
-      p.appendChild(a);
-      lEl.appendChild(p);
-    });
-  }
-
-  function fail() {
-    if (done) return;
-    pending--;
-    if (pending > 0) return;
-    showFallback();
-  }
-
-  function probe(u) {
-    return new Promise(function (resolve) {
-      var c = new AbortController();
-      controllers.push(c);
-
-      var timer = setTimeout(function () {
-        try { c.abort(); } catch (e) {}
-        resolve(false);
-      }, TIMEOUT);
-
-      fetch(buildUrl(u) + "?_t=" + Date.now(), {
-        method: "GET",
-        mode: "no-cors",
-        cache: "no-store",
-        signal: c.signal,
-        redirect: "follow"
-      })
-      .then(function () { clearTimeout(timer); resolve(true); })
-      .catch(function () { clearTimeout(timer); resolve(false); });
-    });
-  }
-
-  // 1) بررسی کش sessionStorage
-  try {
-    var cached = JSON.parse(sessionStorage.getItem(CACHE_KEY) || "null");
-    if (cached && cached.url && (Date.now() - cached.t) < CACHE_TTL) {
-      // اگه کش معتبر بود، سریع برو
-      go(cached.url);
-      return;
-    }
-  } catch (e) {}
-
-  // 2) probe همه سایت‌ها
-  pending = SITES.length;
-  hEl.textContent = "اگر بیش از چند ثانیه طول کشید، صفحه را رفرش کن";
-
-  SITES.forEach(function (u) {
-    probe(u).then(function (ok) {
-      if (ok) go(u);
-      else fail();
-    });
+    a.appendChild(spanText);
+    a.appendChild(spanBadge);
+    box.appendChild(a);
   });
-})();
+}
+
+// ارسال درخواست‌های همزمان (Ping) با حداکثر سرعت
+SITES.forEach(function (site) {
+  var c = new AbortController();
+  var t = setTimeout(function () { c.abort(); }, TIMEOUT);
+  
+  // استفاده از ping سبک بدون ذخیره کش
+  var pingTarget = site.url.split('#')[0] + "/ping?_t=" + Date.now();
+
+  fetch(pingTarget, { mode: "no-cors", cache: "no-store", signal: c.signal })
+    .then(function () { 
+      clearTimeout(t); 
+      go(site); 
+    })
+    .catch(function () { 
+      clearTimeout(t); 
+      fail(); 
+    });
+});
 </script>
 </body>
 </html>
