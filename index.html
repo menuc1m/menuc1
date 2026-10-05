@@ -4,11 +4,16 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>منو</title>
+<meta name="robots" content="noindex,nofollow">
 <style>
+  *{box-sizing:border-box}
   body{margin:0;min-height:100vh;min-height:100dvh;display:grid;place-items:center;background:#1a0f0a;color:#fff;font-family:Tahoma,sans-serif;text-align:center;padding:20px}
-  a{color:#ffd9b4;font-size:16px}
+  a{color:#ffd9b4;font-size:16px;text-decoration:none;display:inline-block;padding:12px 20px;border:1px solid rgba(255,217,180,.3);border-radius:10px;margin:4px 0;transition:background .2s}
+  a:hover{background:rgba(254,123,1,.15)}
   .sp{width:34px;height:34px;margin:0 auto 14px;border:4px solid rgba(255,255,255,.2);border-top-color:#fe7b01;border-radius:50%;animation:r 1s linear infinite}
   @keyframes r{to{transform:rotate(360deg)}}
+  p{margin:6px 0}
+  .hint{font-size:12px;color:#8a7a6a;margin-top:16px}
 </style>
 </head>
 <body>
@@ -16,40 +21,122 @@
   <div class="sp" id="sp"></div>
   <p id="m">در حال اتصال به منو...</p>
   <div id="l"></div>
+  <p class="hint" id="h"></p>
 </div>
 <script>
-var SITES = ["https://menuc1.ir", "https://menu4.servervnp23.workers.dev"];
-var TIMEOUT = 8000;
+(function () {
+  "use strict";
 
-var done = false, left = SITES.length;
-var suffix = location.search + location.hash;
+  var SITES = [
+    "https://menuc1.ir",
+    "https://menu4.servervnp23.workers.dev"
+  ];
+  var TIMEOUT = 8000;
+  var CACHE_KEY = "menu_best_site";
+  var CACHE_TTL = 5 * 60 * 1000; // 5 دقیقه
 
-function go(u) {
-  if (done) return;
-  done = true;
-  location.replace(u + "/" + suffix);
-}
-function fail() {
-  left--;
-  if (left > 0 || done) return;
-  document.getElementById("sp").style.display = "none";
-  document.getElementById("m").textContent = "اتصال خودکار برقرار نشد؛ یکی از لینک‌ها را امتحان کن:";
-  var box = document.getElementById("l");
+  var done = false;
+  var pending = 0;
+  var controllers = [];
+
+  var suffix = (location.search || "") + (location.hash || "");
+
+  var spEl = document.getElementById("sp");
+  var mEl  = document.getElementById("m");
+  var lEl  = document.getElementById("l");
+  var hEl  = document.getElementById("h");
+
+  function buildUrl(base) {
+    var u = base.replace(/\/+$/, "") + "/";
+    if (suffix) u += suffix;
+    return u;
+  }
+
+  function cleanup() {
+    controllers.forEach(function (c) {
+      try { c.abort(); } catch (e) {}
+    });
+    controllers = [];
+  }
+
+  function go(u) {
+    if (done) return;
+    done = true;
+    cleanup();
+    try {
+      sessionStorage.setItem(CACHE_KEY, JSON.stringify({
+        url: u,
+        t: Date.now()
+      }));
+    } catch (e) {}
+    location.replace(buildUrl(u));
+  }
+
+  function showFallback() {
+    spEl.style.display = "none";
+    mEl.textContent = "اتصال خودکار برقرار نشد؛ یکی از لینک‌ها را امتحان کن:";
+
+    SITES.forEach(function (u) {
+      var p = document.createElement("p");
+      var a = document.createElement("a");
+      a.href = buildUrl(u);
+      a.rel = "noopener noreferrer";
+      a.textContent = u.replace(/^https?:\/\//, "");
+      p.appendChild(a);
+      lEl.appendChild(p);
+    });
+  }
+
+  function fail() {
+    if (done) return;
+    pending--;
+    if (pending > 0) return;
+    showFallback();
+  }
+
+  function probe(u) {
+    return new Promise(function (resolve) {
+      var c = new AbortController();
+      controllers.push(c);
+
+      var timer = setTimeout(function () {
+        try { c.abort(); } catch (e) {}
+        resolve(false);
+      }, TIMEOUT);
+
+      fetch(buildUrl(u) + "?_t=" + Date.now(), {
+        method: "GET",
+        mode: "no-cors",
+        cache: "no-store",
+        signal: c.signal,
+        redirect: "follow"
+      })
+      .then(function () { clearTimeout(timer); resolve(true); })
+      .catch(function () { clearTimeout(timer); resolve(false); });
+    });
+  }
+
+  // 1) بررسی کش sessionStorage
+  try {
+    var cached = JSON.parse(sessionStorage.getItem(CACHE_KEY) || "null");
+    if (cached && cached.url && (Date.now() - cached.t) < CACHE_TTL) {
+      // اگه کش معتبر بود، سریع برو
+      go(cached.url);
+      return;
+    }
+  } catch (e) {}
+
+  // 2) probe همه سایت‌ها
+  pending = SITES.length;
+  hEl.textContent = "اگر بیش از چند ثانیه طول کشید، صفحه را رفرش کن";
+
   SITES.forEach(function (u) {
-    var p = document.createElement("p"), a = document.createElement("a");
-    a.href = u + "/" + suffix;
-    a.textContent = u.replace("https://", "");
-    p.appendChild(a);
-    box.appendChild(p);
+    probe(u).then(function (ok) {
+      if (ok) go(u);
+      else fail();
+    });
   });
-}
-SITES.forEach(function (u) {
-  var c = new AbortController();
-  var t = setTimeout(function () { c.abort(); }, TIMEOUT);
-  fetch(u + "/ping?_t=" + Date.now(), { mode: "no-cors", cache: "no-store", signal: c.signal })
-    .then(function () { clearTimeout(t); go(u); })
-    .catch(function () { clearTimeout(t); fail(); });
-});
+})();
 </script>
 </body>
 </html>
