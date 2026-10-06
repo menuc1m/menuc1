@@ -31,3 +31,89 @@
 
 <script>
 // همهٔ آدرس‌ها باید با https:// شروع شوند. اگر # داشته باشند، بعد از ورود همان بخش باز می‌شود.
+var SITES = [
+  { name: "همراه اول",      url: "https://menu4.servervnp23.workers.dev/" },
+  { name: "همراه اول (۲)",  url: "https://www.menuc1.ir/" },
+  { name: "ایرانسل",        url: "https://menuc1.ir/#menu" }
+];
+
+var TIMEOUT    = 6000;               // حداکثر انتظار برای هر مسیر
+var SHOW_AFTER = 2500;               // بعد از این زمان دکمه‌های دستی هم نشان داده می‌شود
+var FAST       = 2500;               // انتظار برای مسیر ذخیره‌شده (بازدید دوباره)
+var KEEP       = 6 * 3600 * 1000;    // مسیر خوب تا ۶ ساعت یادآوری می‌شود
+
+var done = false, shown = false, left = SITES.length;
+var res = [], tags = [];
+
+function baseOf(u) { return u.split('#')[0].replace(/\/+$/, ""); }
+function getFinalUrl(u) {
+  var s = location.search, h = location.hash;
+  if (u.indexOf('#') !== -1) { var p = u.split('#'); return p[0] + s + (h || '#' + p[1]); }
+  return u + s + h;
+}
+function save(i) { try { localStorage.setItem("gw", i + "|" + Date.now()); } catch (e) {} }
+function saved() {
+  try {
+    var v = (localStorage.getItem("gw") || "").split("|");
+    return v.length === 2 && Date.now() - Number(v[1]) < KEEP && SITES[Number(v[0])] ? Number(v[0]) : -1;
+  } catch (e) { return -1; }
+}
+function setBadge(i, txt) { res[i] = txt; if (tags[i]) tags[i].textContent = txt; }
+
+function ping(i, ms) {
+  return new Promise(function (ok, no) {
+    var c = new AbortController(), st = Date.now();
+    var t = setTimeout(function () { c.abort(); }, ms);
+    fetch(baseOf(SITES[i].url) + "/ping?_t=" + Date.now(), { mode: "no-cors", cache: "no-store", signal: c.signal })
+      .then(function () { clearTimeout(t); setBadge(i, "✓ " + (Date.now() - st) + "ms"); ok(i); })
+      .catch(function () { clearTimeout(t); setBadge(i, "✗"); no(i); });
+  });
+}
+function go(i) {
+  if (done) return;
+  done = true;
+  save(i);
+  location.replace(getFinalUrl(SITES[i].url));
+}
+function showButtons(allFailed) {
+  if (done) return;
+  if (allFailed) {
+    document.getElementById("sp").style.display = "none";
+    document.getElementById("m").textContent = "اتصال خودکار برقرار نشد. لطفاً مسیر مربوط به اپراتور خود را انتخاب کنید:";
+  } else if (!shown) {
+    document.getElementById("m").textContent = "در حال شناسایی مسیر... اگر طول کشید، خودت یکی را انتخاب کن:";
+  }
+  if (shown) return;
+  shown = true;
+  var box = document.getElementById("l");
+  SITES.forEach(function (site, i) {
+    var a = document.createElement("a");
+    a.className = "btn-link";
+    a.href = getFinalUrl(site.url);
+    var t = document.createElement("span");
+    t.textContent = "ورود مخصوص " + site.name;
+    var b = document.createElement("span");
+    b.className = "badge";
+    b.textContent = res[i] || "…";
+    tags[i] = b;
+    a.appendChild(t);
+    a.appendChild(b);
+    box.appendChild(a);
+  });
+}
+function race() {
+  SITES.forEach(function (s, i) {
+    ping(i, TIMEOUT).then(go).catch(function () {
+      left--;
+      if (left === 0 && !done) showButtons(true);
+    });
+  });
+}
+
+setTimeout(function () { showButtons(false); }, SHOW_AFTER);
+var s = saved();
+if (s >= 0) ping(s, FAST).then(go).catch(race);
+else race();
+</script>
+</body>
+</html>
