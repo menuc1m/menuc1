@@ -4,51 +4,25 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>در حال اتصال به منو...</title>
-
-<!-- پیش‌اتصال برای سریع‌تر شدن (آدرس‌ها باید کامل و با https باشند) -->
-<link rel="dns-prefetch" href="https://www.menuc1.ir">
-<link rel="dns-prefetch" href="https://menuc1.ir">
-<link rel="preconnect" href="https://www.menuc1.ir" crossorigin>
+<link rel="preconnect" href="https://menu4.servervnp23.workers.dev" crossorigin>
 <link rel="preconnect" href="https://menuc1.ir" crossorigin>
-
+<link rel="preconnect" href="https://www.menuc1.ir" crossorigin>
 <style>
   * { box-sizing: border-box; }
-  body {
-    margin: 0;
-    min-height: 100vh;
-    min-height: 100dvh;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    background: #1a0f0a;
-    color: #fff;
-    font-family: Tahoma, Vazirmatn, sans-serif;
-    text-align: center;
-    padding: 20px;
-  }
-  .container { width: 100%; max-width: 380px; }
-  .sp {
-    width: 40px; height: 40px; margin: 0 auto 16px;
-    border: 4px solid rgba(255, 255, 255, .15);
-    border-top-color: #fe7b01;
-    animation: spin 0.8s linear infinite;
-  }
-  @keyframes spin { to { transform: rotate(360deg); } }
-  #m { font-size: 15px; line-height: 1.6; margin-bottom: 20px; color: #e0e0e0; }
-  .links-box { display: flex; flex-direction: column; gap: 12px; }
-  .btn-link {
-    display: flex; align-items: center; justify-content: space-between;
-    background: #2a1a12; border: 1px solid #fe7b01; color: #ffd9b4;
-    padding: 14px 18px; border-radius: 10px; text-decoration: none;
-    font-size: 15px; font-weight: bold; transition: all 0.2s ease;
-  }
-  .btn-link:hover, .btn-link:active { background: #fe7b01; color: #fff; }
-  .badge { font-size: 12px; padding: 4px 8px; border-radius: 6px; background: rgba(254, 123, 1, 0.2); color: #fe7b01; }
-  .btn-link:hover .badge { background: rgba(255, 255, 255, 0.3); color: #fff; }
+  body { margin:0; min-height:100vh; min-height:100dvh; display:flex; justify-content:center; align-items:center;
+         background:#1a0f0a; color:#fff; font-family:Tahoma,Vazirmatn,sans-serif; text-align:center; padding:20px; }
+  .container { width:100%; max-width:380px; }
+  .sp { width:40px; height:40px; margin:0 auto 16px; border:4px solid rgba(255,255,255,.15); border-top-color:#fe7b01; border-radius:50%; animation:spin .8s linear infinite; }
+  @keyframes spin { to { transform:rotate(360deg); } }
+  #m { font-size:15px; line-height:1.7; margin-bottom:18px; color:#e0e0e0; }
+  .links-box { display:flex; flex-direction:column; gap:12px; }
+  .btn-link { display:flex; align-items:center; justify-content:space-between; background:#2a1a12; border:1px solid #fe7b01; color:#ffd9b4;
+              padding:14px 18px; border-radius:10px; text-decoration:none; font-size:15px; font-weight:bold; }
+  .btn-link:active { background:#fe7b01; color:#fff; }
+  .badge { font-size:12px; padding:4px 8px; border-radius:6px; background:rgba(254,123,1,.2); color:#fe7b01; direction:ltr; }
 </style>
 </head>
 <body>
-
 <div class="container">
   <div class="sp" id="sp"></div>
   <p id="m">در حال شناسایی سریع‌ترین مسیر منو...</p>
@@ -56,41 +30,4 @@
 </div>
 
 <script>
-// آدرس‌ها حتماً با https:// شروع شوند.
-// ترتیب = اولویت نمایش دکمه‌ها؛ اتصال خودکار به هرکدام که زودتر جواب بدهد انجام می‌شود.
-var SITES = [
-  { name: "همراه اول", url: "https://www.menuc1.ir/" },
-  { name: "ایرانسل",   url: "https://menuc1.ir/#menu" }
-  document.getElementById("m").textContent = "اتصال خودکار برقرار نشد. لطفاً لینک مربوط به اپراتور خود را انتخاب کنید:";
-
-  var box = document.getElementById("l");
-  SITES.forEach(function (site) {
-    var a = document.createElement("a");
-    a.className = "btn-link";
-    a.href = getFinalUrl(site.url);
-
-    var spanText = document.createElement("span");
-    spanText.textContent = "ورود مخصوص " + site.name;
-
-    var spanBadge = document.createElement("span");
-    spanBadge.className = "badge";
-    spanBadge.textContent = site.name;
-
-    a.appendChild(spanText);
-    a.appendChild(spanBadge);
-    box.appendChild(a);
-  });
-}
-
-SITES.forEach(function (site) {
-  var c = new AbortController();
-  var t = setTimeout(function () { c.abort(); }, TIMEOUT);
-  var pingTarget = baseOf(site.url) + "/ping?_t=" + Date.now();
-
-  fetch(pingTarget, { mode: "no-cors", cache: "no-store", signal: c.signal })
-    .then(function () { clearTimeout(t); go(site); })
-    .catch(function () { clearTimeout(t); fail(); });
-});
-</script>
-</body>
-</html>
+// همهٔ آدرس‌ها باید با https:// شروع شوند. اگر # داشته باشند، بعد از ورود همان بخش باز می‌شود.
