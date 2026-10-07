@@ -3,236 +3,166 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>منو | کافه دوست دخترم تاج سرم 💞</title>
 <meta name="robots" content="noindex,nofollow">
+<title>منو</title>
 <style>
   *{box-sizing:border-box}
   body{
-    margin:0;
-    min-height:100vh;min-height:100dvh;
-    display:grid;place-items:center;
-    background:radial-gradient(circle at 50% 0%,#2a160c 0%,#1a0f0a 60%);
-    color:#fff;
-    font-family:Tahoma,sans-serif;
-    text-align:center;
-    padding:24px;
+    margin:0; min-height:100vh; min-height:100dvh;
+    display:grid; place-items:center; padding:24px;
+    background:#1a0f0a; color:#fff;
+    font-family:Tahoma,sans-serif; text-align:center;
   }
   .card{
-    background:rgba(255,255,255,.04);
-    border:1px solid rgba(254,123,1,.25);
+    width:100%; max-width:420px; padding:32px 24px;
+    background:rgba(255,255,255,.05);
+    border:1px solid rgba(254,123,1,.3);
     border-radius:20px;
-    padding:32px 24px;
-    max-width:420px;
-    width:100%;
-    box-shadow:0 20px 60px rgba(0,0,0,.5);
   }
-  .logo{font-size:38px;margin-bottom:8px}
-  h1{
-    font-size:18px;
-    margin:0 0 6px;
-    font-weight:bold;
-    color:#ffd9b4;
-  }
-  .sub{
-    font-size:12px;
-    color:#8a7a6a;
-    margin:0 0 22px;
-  }
-  .sp{
-    width:38px;height:38px;
-    margin:0 auto 16px;
+  h1{font-size:20px; margin:8px 0; color:#ffd9b4}
+  .sub{font-size:13px; color:#a09080; margin:0 0 20px}
+  .spin{
+    width:36px; height:36px; margin:0 auto 14px;
     border:4px solid rgba(255,255,255,.15);
-    border-top-color:#fe7b01;
-    border-radius:50%;
+    border-top-color:#fe7b01; border-radius:50%;
     animation:r 1s linear infinite;
   }
   @keyframes r{to{transform:rotate(360deg)}}
-  #m{font-size:15px;margin:0 0 8px;color:#fff}
-  #h{font-size:11px;color:#8a7a6a;margin:14px 0 0;line-height:1.7}
-  a.link{
-    display:flex;
-    align-items:center;
-    justify-content:space-between;
-    gap:10px;
-    color:#ffd9b4;
-    font-size:14px;
-    text-decoration:none;
-    padding:14px 16px;
-    margin:8px 0;
-    border:1px solid rgba(254,123,1,.35);
-    border-radius:12px;
-    background:rgba(254,123,1,.06);
-    transition:all .2s;
+  #status{font-size:14px; margin:0 0 16px}
+  #links{display:none}
+  #links p{font-size:12px; color:#a09080; margin:16px 0 8px}
+  #links a{
+    display:block; padding:14px; margin:8px 0;
+    color:#ffd9b4; text-decoration:none; font-size:15px;
+    border:1px solid rgba(254,123,1,.4);
+    border-radius:12px; background:rgba(254,123,1,.08);
   }
-  a.link:hover{
-    background:rgba(254,123,1,.18);
-    border-color:#fe7b01;
-    transform:translateY(-1px);
-  }
-  a.link .tag{
-    font-size:11px;
-    padding:4px 10px;
-    border-radius:20px;
-    background:rgba(254,123,1,.2);
-    color:#ffd9b4;
-    white-space:nowrap;
-  }
-  a.link .host{
-    font-family:monospace;
-    direction:ltr;
-    font-size:12px;
-    color:#b9a99a;
-    flex:1;
-    text-align:left;
-  }
-  .hide{display:none}
 </style>
 </head>
 <body>
 <div class="card">
-  <div class="logo">💞</div>
-  <h1>کافه دوست دخترم تاج سرم</h1>
-  <p class="sub">در حال اتصال به منو...</p>
+  <div style="font-size:38px">💞</div>
+  <h1 id="cafeName"></h1>
+  <p class="sub">در حال پیدا کردن بهترین مسیر...</p>
+  <div class="spin" id="spin"></div>
+  <p id="status">لطفاً صبر کن</p>
 
-  <div class="sp" id="sp"></div>
-  <p id="m">لطفاً کمی صبر کن</p>
-  <div id="l"></div>
-  <p id="h" class="hide"></p>
+  <div id="links">
+    <p>اگر خودکار باز نشد، اپراتورت رو انتخاب کن:</p>
+  </div>
 </div>
 
 <script>
-(function () {
-  "use strict";
+/* =====================================================
+   ✏️ فقط این قسمت رو تغییر بده
+   ===================================================== */
 
-  // ====== تنظیمات ======
-  var SITES = [
-    { url: "https://www.menuc1.ir", label: "همراه اول" },
-    { url: "https://menuc1.ir",     label: "ایرانسل" }
-  ];
-  var TIMEOUT = 8000;
-  var CACHE_KEY = "menu_best_site_v1";
-  var CACHE_TTL = 5 * 60 * 1000; // 5 دقیقه
+// اسم کافه (بالای صفحه نشون داده میشه)
+var CAFE_NAME = "کافه دوست دخترم تاج سرم";
 
-  // ====== state ======
-  var done = false;
-  var pending = 0;
-  var controllers = [];
-  var suffix = (location.search || "") + (location.hash || "");
+// لینک‌ها: هر خط یک سایت
+// name = اسمی که روی دکمه دستی نشون داده میشه
+// url  = آدرس کامل سایت
+var SITES = [
+  { name: "همراه اول", url: "https://www.menuc1.ir" },
+  { name: "ایرانسل",   url: "https://menuc1.ir" }
+];
 
-  // ====== DOM ======
-  var spEl = document.getElementById("sp");
-  var mEl  = document.getElementById("m");
-  var lEl  = document.getElementById("l");
-  var hEl  = document.getElementById("h");
-  var subEl = document.querySelector(".sub");
+// چند ثانیه صبر کنه تا جواب بگیره (میلی‌ثانیه)
+var TIMEOUT = 6000;
 
-  // ====== helpers ======
-  function buildUrl(base) {
-    var u = base.replace(/\/+$/, "") + "/";
-    if (suffix) u += suffix;
-    return u;
+// بعد از اولین جواب موفق، چقدر صبر کنه ببینه سایت دیگه سریع‌تره یا نه
+var WAIT_FOR_OTHERS = 1200;
+
+// بعد از چند ثانیه دکمه‌های دستی نشون داده بشه
+var SHOW_MANUAL_AFTER = 4000;
+
+/* =====================================================
+   ⛔ از اینجا به پایین نیازی به تغییر نیست
+   ===================================================== */
+
+document.title = "منو | " + CAFE_NAME;
+document.getElementById("cafeName").textContent = CAFE_NAME;
+
+var extra = location.search + location.hash;
+var statusEl = document.getElementById("status");
+var linksEl = document.getElementById("links");
+var spinEl = document.getElementById("spin");
+
+var results = [];      // سایت‌هایی که جواب دادند
+var finished = 0;
+var redirected = false;
+var graceTimer = null;
+
+function fullUrl(site) {
+  return site.url.replace(/\/+$/, "") + "/" + extra;
+}
+
+// دکمه‌های دستی
+SITES.forEach(function (site) {
+  var a = document.createElement("a");
+  a.href = fullUrl(site);
+  a.textContent = site.name;
+  linksEl.appendChild(a);
+});
+
+function showManual() {
+  if (redirected) return;
+  linksEl.style.display = "block";
+}
+setTimeout(showManual, SHOW_MANUAL_AFTER);
+
+function redirect() {
+  if (redirected) return;
+  redirected = true;
+  // سریع‌ترین سایت رو انتخاب کن
+  results.sort(function (a, b) { return a.time - b.time; });
+  var best = results[0].site;
+  statusEl.textContent = "وصل شد ✓ " + best.name;
+  location.replace(fullUrl(best));
+}
+
+function onResult(site, ok, time) {
+  finished++;
+  if (ok) {
+    results.push({ site: site, time: time });
+    // اولین موفقیت: یه مکث کوتاه که سایت‌های دیگه هم فرصت جواب دادن داشته باشن
+    if (!graceTimer) graceTimer = setTimeout(redirect, WAIT_FOR_OTHERS);
   }
-
-  function cleanup() {
-    controllers.forEach(function (c) {
-      try { c.abort(); } catch (e) {}
-    });
-    controllers = [];
-  }
-
-  function go(site) {
-    if (done) return;
-    done = true;
-    cleanup();
-    try {
-      sessionStorage.setItem(CACHE_KEY, JSON.stringify({
-        url: site.url,
-        label: site.label,
-        t: Date.now()
-      }));
-    } catch (e) {}
-    if (subEl) subEl.textContent = "در حال انتقال به منو...";
-    mEl.textContent = "اتصال برقرار شد ✓ (" + site.label + ")";
-    location.replace(buildUrl(site.url));
-  }
-
-  function showFallback() {
-    spEl.style.display = "none";
-    mEl.textContent = "اتصال خودکار برقرار نشد";
-    subEl.textContent = "یکی از لینک‌ها را امتحان کن:";
-
-    SITES.forEach(function (s) {
-      var a = document.createElement("a");
-      a.className = "link";
-      a.href = buildUrl(s.url);
-      a.rel = "noopener noreferrer";
-
-      var host = document.createElement("span");
-      host.className = "host";
-      host.textContent = s.url.replace(/^https?:\/\//, "");
-
-      var tag = document.createElement("span");
-      tag.className = "tag";
-      tag.textContent = s.label;
-
-      a.appendChild(host);
-      a.appendChild(tag);
-      lEl.appendChild(a);
-    });
-
-    hEl.classList.remove("hide");
-    hEl.textContent = "اگر باز هم باز نشد، اپراتور خود را عوض کن یا کمی بعد دوباره تلاش کن.";
-  }
-
-  function fail() {
-    if (done) return;
-    pending--;
-    if (pending > 0) return;
-    showFallback();
-  }
-
-  function probe(site) {
-    return new Promise(function (resolve) {
-      var c = new AbortController();
-      controllers.push(c);
-
-      var timer = setTimeout(function () {
-        try { c.abort(); } catch (e) {}
-        resolve(false);
-      }, TIMEOUT);
-
-      fetch(buildUrl(site.url) + "?_t=" + Date.now(), {
-        method: "GET",
-        mode: "no-cors",
-        cache: "no-store",
-        signal: c.signal,
-        redirect: "follow"
-      })
-      .then(function () { clearTimeout(timer); resolve(true); })
-      .catch(function () { clearTimeout(timer); resolve(false); });
-    });
-  }
-
-  // ====== 1) چک کش ======
-  try {
-    var cached = JSON.parse(sessionStorage.getItem(CACHE_KEY) || "null");
-    if (cached && cached.url && (Date.now() - cached.t) < CACHE_TTL) {
-      go({ url: cached.url, label: cached.label || "" });
-      return;
+  if (finished === SITES.length) {
+    if (results.length > 0) {
+      clearTimeout(graceTimer);
+      redirect();
+    } else {
+      spinEl.style.display = "none";
+      statusEl.textContent = "اتصال خودکار برقرار نشد";
+      showManual();
     }
-  } catch (e) {}
+  }
+}
 
-  // ====== 2) probe موازی ======
-  pending = SITES.length;
-  mEl.textContent = "در حال بررسی اتصال...";
+function probe(site) {
+  var start = Date.now();
+  var ctrl = new AbortController();
+  var timer = setTimeout(function () { ctrl.abort(); }, TIMEOUT);
 
-  SITES.forEach(function (site) {
-    probe(site).then(function (ok) {
-      if (ok) go(site);
-      else fail();
-    });
+  fetch(site.url.replace(/\/+$/, "") + "/?_t=" + start, {
+    method: "GET",
+    mode: "no-cors",
+    cache: "no-store",
+    signal: ctrl.signal
+  })
+  .then(function () {
+    clearTimeout(timer);
+    onResult(site, true, Date.now() - start);
+  })
+  .catch(function () {
+    clearTimeout(timer);
+    onResult(site, false, 0);
   });
-})();
+}
+
+SITES.forEach(probe);
 </script>
 </body>
 </html>
